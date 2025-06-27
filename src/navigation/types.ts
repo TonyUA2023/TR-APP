@@ -1,0 +1,1 @@
+export type RootStackParamList = { Dashboard: undefined; FormsList: { categoryId: string }; FormScreen: { formId: string; recordId?: string }; Documents: undefined; Categories: undefined; };

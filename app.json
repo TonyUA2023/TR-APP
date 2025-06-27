@@ -20,10 +20,39 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.adminjstack.TRAPP",
+      "permissions": [
+        "CAMERA",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_EXTERNAL_STORAGE"
+      ],
+      "bundler": "metro"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      ["expo-camera", {
+        "cameraPermission": "Necesitamos acceso a la cámara para tomar fotos"
+      }],
+      ["expo-media-library", {
+        "photosPermission": "Permiso para guardar fotos"
+      }]
+    ],
+    "assetBundlePatterns": [
+      "**/*.png",
+      "**/*.jpg",
+      "**/*.jpeg",
+      "**/*.gif",
+      "**/*.pdf",
+      "src/assets/templates/*.pdf"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "48a7ef33-4c1e-4069-ae93-9c7bd2fed14d"
+      }
+    },
+    "owner": "adminjstack"
   }
 }
