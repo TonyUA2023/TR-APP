@@ -132,6 +132,7 @@ class PDFServiceDynamic {
         '18HVACMechanicalOutdoors.pdf': require('../assets/templates/18HVACMechanicalOutdoors.pdf'),
         '18.1HVACMechanicalOutdoors34.pdf': require('../assets/templates/18.1HVACMechanicalOutdoors34.pdf'),
         '19HVACDucts.pdf': require('../assets/templates/19HVACDucts.pdf'),
+        // Agrega más plantillas aquí conforme las necesites
       };
 
       if (!templateAssets[templateFile]) {
@@ -271,7 +272,7 @@ class PDFServiceDynamic {
         
         console.log(`✅ ${pdfFieldName}: ${this.shouldCheckBox(value) ? 'checked' : 'unchecked'}`);
       } catch (error) {
-        console.log(`⚠️ Checkbox ${pdfFieldName} not found: ${typeof error === 'object' && error && 'message' in error ? (error as any).message : String(error)}`);
+        console.log(`⚠️ Checkbox ${pdfFieldName} not found: ${error.message}`);
       }
     }
   }
@@ -323,7 +324,7 @@ class PDFServiceDynamic {
           }
         }
       } catch (error) {
-        console.log(`⚠️ Dropdown ${pdfFieldName} error: ${typeof error === 'object' && error && 'message' in error ? (error as any).message : String(error)}`);
+        console.log(`⚠️ Dropdown ${pdfFieldName} error: ${error.message}`);
       }
     }
   }
@@ -349,13 +350,7 @@ class PDFServiceDynamic {
           try {
             field = form.getTextField(name);
           } catch (fieldError) {
-            if (
-              typeof fieldError === 'object' &&
-              fieldError !== null &&
-              'message' in fieldError &&
-              typeof (fieldError as any).message === 'string' &&
-              (fieldError as any).message.includes('rich text')
-            ) {
+            if (fieldError.message && fieldError.message.includes('rich text')) {
               console.log(`⏭️ Skipping rich text field ${name}`);
               continue;
             }
@@ -368,7 +363,7 @@ class PDFServiceDynamic {
           }
         }
       } catch (error) {
-        console.log(`⚠️ Special field ${name} not found or error: ${typeof error === 'object' && error && 'message' in error ? (error as any).message : String(error)}`);
+        console.log(`⚠️ Special field ${name} not found or error: ${error.message}`);
       }
     }
   }
@@ -399,7 +394,7 @@ class PDFServiceDynamic {
           try {
             button = form.getButton(pdfButtonName);
           } catch (buttonError) {
-            console.log(`⚠️ Cannot get button ${pdfButtonName}: ${typeof buttonError === 'object' && buttonError && 'message' in buttonError ? (buttonError as any).message : String(buttonError)}`);
+            console.log(`⚠️ Cannot get button ${pdfButtonName}: ${buttonError.message}`);
           }
           
           if (button) {
@@ -413,11 +408,14 @@ class PDFServiceDynamic {
                   photoSizeConstraints
                 );
                 
-                button.setImage(embeddedImage);
+                button.setImage(embeddedImage, {
+                  width: dimensions.width,
+                  height: dimensions.height,
+                  alignment: 0
+                });
                 
                 try {
-                  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-                  button.updateAppearances(font);
+                  button.updateAppearances();
                 } catch (appearanceError) {
                   console.log(`⚠️ Could not update appearance for ${pdfButtonName}`);
                 }
@@ -434,13 +432,7 @@ class PDFServiceDynamic {
           }
         }
       } catch (error) {
-        console.log(
-          `⚠️ Error processing photo ${dataKey}: ${
-            typeof error === 'object' && error && 'message' in error
-              ? (error as any).message
-              : String(error)
-          }`
-        );
+        console.log(`⚠️ Error processing photo ${dataKey}: ${error.message}`);
         failedPhotos.push(dataKey);
       }
     }
