@@ -6,7 +6,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 // Importar pantallas
 import SplashScreen from './src/screens/SplashScreen';
@@ -23,7 +24,6 @@ import { COLORS } from './src/constants';
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
-// Tab Navigator Component
 function TabNavigator() {
   return (
     <Tab.Navigator
@@ -103,16 +103,13 @@ function TabNavigator() {
   );
 }
 
-// Main App Component
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simular tiempo de carga inicial
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 2000);
-
     return () => clearTimeout(timer);
   }, []);
 
@@ -121,48 +118,46 @@ export default function App() {
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" backgroundColor={COLORS.primary} />
-      <NavigationContainer>
-        <Stack.Navigator
-          screenOptions={{
-            headerStyle: {
-              backgroundColor: COLORS.primary,
-            },
-            headerTintColor: 'white',
-            headerTitleStyle: {
-              fontWeight: '600',
-            },
-          }}
-        >
-          {/* Tab Navigator como pantalla principal */}
-          <Stack.Screen 
-            name="MainTabs" 
-            component={TabNavigator}
-            options={{ headerShown: false }}
-          />
-          
-          {/* Pantallas que se abren como modales/stack */}
-          <Stack.Screen 
-            name="FormsList" 
-            component={FormsListScreen}
-            options={{ 
-              title: 'Select Form',
-              presentation: 'modal'
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+        <StatusBar style="light" backgroundColor={COLORS.primary} />
+        <NavigationContainer>
+          <Stack.Navigator
+            screenOptions={{
+              headerStyle: {
+                backgroundColor: COLORS.primary,
+              },
+              headerTintColor: 'white',
+              headerTitleStyle: {
+                fontWeight: '600',
+              },
             }}
-          />
-          
-          <Stack.Screen 
-            name="FormScreen" 
-            component={FormScreen}
-            options={{ 
-              title: 'Inspection Form',
-              presentation: 'modal'
-            }}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </View>
+          >
+            <Stack.Screen 
+              name="MainTabs" 
+              component={TabNavigator}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="FormsList" 
+              component={FormsListScreen}
+              options={{ 
+                title: 'Select Form',
+                presentation: 'modal'
+              }}
+            />
+            <Stack.Screen 
+              name="FormScreen" 
+              component={FormScreen}
+              options={{ 
+                title: 'Inspection Form',
+                presentation: 'modal'
+              }}
+            />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 

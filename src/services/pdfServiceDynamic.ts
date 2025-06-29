@@ -11,8 +11,7 @@ import { getTemplateMapping, TemplateMapping } from './pdf/templateMappings';
 
 class PDFServiceDynamic {
   private templateCache: Map<string, Uint8Array> = new Map();
-  private imageCache: Map<string, PDFImage> = new Map();
-
+  
   /**
    * MÉTODO PRINCIPAL - GENERA PDF CON PLANTILLA DINÁMICA
    */
@@ -78,6 +77,8 @@ class PDFServiceDynamic {
       await this.fillCheckboxes(pdfForm, formData, templateMapping.checkboxMappings);
       await this.fillDropdowns(pdfForm, formData, templateMapping.dropdownMappings, templateMapping.dropdownValueMappings);
       await this.fillSpecialFields(pdfForm, formData, templateMapping.specialFields);
+      
+      // IMPORTANTE: Procesar fotos con mejor manejo asíncrono
       await this.processPhotos(pdfDoc, pdfForm, formData, templateMapping.photoButtonMappings, templateMapping.photoSizeConstraints);
       
       // Guardar PDF
@@ -132,7 +133,6 @@ class PDFServiceDynamic {
         '18HVACMechanicalOutdoors.pdf': require('../assets/templates/18HVACMechanicalOutdoors.pdf'),
         '18.1HVACMechanicalOutdoors34.pdf': require('../assets/templates/18.1HVACMechanicalOutdoors34.pdf'),
         '19HVACDucts.pdf': require('../assets/templates/19HVACDucts.pdf'),
-        // Agrega más plantillas aquí conforme las necesites
       };
 
       if (!templateAssets[templateFile]) {
@@ -272,7 +272,7 @@ class PDFServiceDynamic {
         
         console.log(`✅ ${pdfFieldName}: ${this.shouldCheckBox(value) ? 'checked' : 'unchecked'}`);
       } catch (error) {
-        console.log(`⚠️ Checkbox ${pdfFieldName} not found: ${error.message}`);
+        console.log(`⚠️ Checkbox ${pdfFieldName} not found: ${(error as any).message}`);
       }
     }
   }
@@ -324,7 +324,7 @@ class PDFServiceDynamic {
           }
         }
       } catch (error) {
-        console.log(`⚠️ Dropdown ${pdfFieldName} error: ${error.message}`);
+        console.log(`⚠️ Dropdown ${pdfFieldName} error: ${(error as any).message}`);
       }
     }
   }
@@ -350,7 +350,7 @@ class PDFServiceDynamic {
           try {
             field = form.getTextField(name);
           } catch (fieldError) {
-            if (fieldError.message && fieldError.message.includes('rich text')) {
+            if ((fieldError as any).message && (fieldError as any).message.includes('rich text')) {
               console.log(`⏭️ Skipping rich text field ${name}`);
               continue;
             }
@@ -363,13 +363,13 @@ class PDFServiceDynamic {
           }
         }
       } catch (error) {
-        console.log(`⚠️ Special field ${name} not found or error: ${error.message}`);
+        console.log(`⚠️ Special field ${name} not found or error: ${(error as any).message}`);
       }
     }
   }
 
   /**
-   * PROCESAR FOTOS CON MAPPING DINÁMICO
+   * PROCESAR FOTOS CON MAPPING DINÁMICO - VERSIÓN MEJORADA
    */
   private async processPhotos(
     pdfDoc: PDFDocument, 
@@ -383,21 +383,34 @@ class PDFServiceDynamic {
     const processedPhotos: string[] = [];
     const failedPhotos: string[] = [];
     
+    // Procesar cada foto de manera secuencial para evitar problemas de concurrencia
     for (const [dataKey, pdfButtonName] of Object.entries(photoButtonMappings)) {
       try {
         const photoUri = formData[dataKey as keyof FormData];
         
         if (photoUri && typeof photoUri === 'string' && photoUri.length > 0) {
           console.log(`📸 Processing photo for ${dataKey}`);
+          console.log(`📸 Photo URI: ${photoUri.substring(0, 100)}...`);
+          
+          // Verificar que el archivo existe antes de procesarlo
+          const fileInfo = await FileSystem.getInfoAsync(photoUri);
+          if (!fileInfo.exists) {
+            console.log(`⚠️ File does not exist: ${photoUri}`);
+            failedPhotos.push(dataKey);
+            continue;
+          }
           
           let button = null;
           try {
             button = form.getButton(pdfButtonName);
           } catch (buttonError) {
-            console.log(`⚠️ Cannot get button ${pdfButtonName}: ${buttonError.message}`);
+            console.log(`⚠️ Cannot get button ${pdfButtonName}: ${(buttonError as any).message}`);
+            failedPhotos.push(dataKey);
+            continue;
           }
           
           if (button) {
+            // Embedar imagen con mejor manejo de errores
             const embeddedImage = await this.embedImageFromUri(pdfDoc, photoUri, dataKey);
             
             if (embeddedImage) {
@@ -408,38 +421,46 @@ class PDFServiceDynamic {
                   photoSizeConstraints
                 );
                 
+                // Establecer imagen en el botón
                 button.setImage(embeddedImage, {
                   width: dimensions.width,
                   height: dimensions.height,
                   alignment: 0
                 });
                 
+                // Intentar actualizar apariencias (puede fallar en algunos PDFs)
                 try {
                   button.updateAppearances();
                 } catch (appearanceError) {
-                  console.log(`⚠️ Could not update appearance for ${pdfButtonName}`);
+                  console.log(`⚠️ Could not update appearance for ${pdfButtonName} - continuing anyway`);
                 }
                 
                 processedPhotos.push(dataKey);
                 console.log(`✅ Photo ${dataKey} set successfully`);
+                
+                // Pequeña pausa para evitar problemas de concurrencia
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
               } catch (setImageError) {
-                console.log(`⚠️ Could not set image for ${pdfButtonName}: ${typeof setImageError === 'object' && setImageError && 'message' in setImageError ? (setImageError as any).message : String(setImageError)}`);
+                console.log(`⚠️ Could not set image for ${pdfButtonName}: ${(setImageError as any).message}`);
                 failedPhotos.push(dataKey);
               }
+            } else {
+              failedPhotos.push(dataKey);
             }
           } else {
             failedPhotos.push(dataKey);
           }
         }
       } catch (error) {
-        console.log(`⚠️ Error processing photo ${dataKey}: ${error.message}`);
+        console.log(`⚠️ Error processing photo ${dataKey}: ${(error as any).message}`);
         failedPhotos.push(dataKey);
       }
     }
     
     console.log(`📸 Photos processed successfully: ${processedPhotos.length}`);
     if (failedPhotos.length > 0) {
-      console.log(`⚠️ Photos that could not be processed: ${failedPhotos.length}`);
+      console.log(`⚠️ Photos that could not be processed: ${failedPhotos.join(', ')}`);
     }
   }
 
@@ -493,7 +514,7 @@ class PDFServiceDynamic {
   }
 
   /**
-   * EMBEDAR IMAGEN DESDE URI
+   * EMBEDAR IMAGEN DESDE URI - VERSIÓN MEJORADA
    */
   private async embedImageFromUri(
     pdfDoc: PDFDocument, 
@@ -501,41 +522,62 @@ class PDFServiceDynamic {
     fieldName: string
   ): Promise<PDFImage | null> {
     try {
-      if (this.imageCache.has(uri)) {
-        return this.imageCache.get(uri)!;
-      }
-      
       console.log(`🖼️ Loading image for ${fieldName}`);
+      console.log(`🖼️ URI: ${uri.substring(0, 100)}...`);
       
       let base64Data: string;
       
+      // Manejar diferentes tipos de URI
       if (uri.startsWith('file://') || uri.startsWith('/')) {
+        // Verificar que el archivo existe
+        const fileInfo = await FileSystem.getInfoAsync(uri);
+        if (!fileInfo.exists) {
+          console.log(`⚠️ File does not exist: ${uri}`);
+          return null;
+        }
+        
+        // Leer archivo como base64
         base64Data = await FileSystem.readAsStringAsync(uri, {
           encoding: FileSystem.EncodingType.Base64,
         });
       } else if (uri.startsWith('data:image')) {
+        // Data URI - extraer base64
         base64Data = uri.split(',')[1];
       } else {
-        console.log(`⚠️ Unsupported URI format`);
+        console.log(`⚠️ Unsupported URI format: ${uri.substring(0, 50)}...`);
         return null;
       }
       
+      // Convertir base64 a Uint8Array
       const imageBytes = this.base64ToUint8Array(base64Data);
+      console.log(`🖼️ Image bytes length: ${imageBytes.length}`);
+      
+      if (imageBytes.length === 0) {
+        console.log(`⚠️ Image bytes are empty`);
+        return null;
+      }
       
       let embeddedImage: PDFImage;
       
+      // Intentar embedar como JPEG primero, luego PNG
       try {
+        console.log(`🖼️ Trying to embed as JPEG...`);
         embeddedImage = await pdfDoc.embedJpg(imageBytes);
+        console.log(`✅ Successfully embedded as JPEG`);
       } catch (jpegError) {
+        console.log(`⚠️ JPEG embedding failed: ${(jpegError as any).message}`);
         try {
+          console.log(`🖼️ Trying to embed as PNG...`);
           embeddedImage = await pdfDoc.embedPng(imageBytes);
+          console.log(`✅ Successfully embedded as PNG`);
         } catch (pngError) {
-          console.log(`❌ Failed to embed image`);
+          console.log(`❌ PNG embedding failed: ${(pngError as any).message}`);
+          console.log(`❌ Failed to embed image for ${fieldName}`);
           return null;
         }
       }
       
-      this.imageCache.set(uri, embeddedImage);
+      console.log(`✅ Image embedded successfully: ${embeddedImage.width}x${embeddedImage.height}`);
       return embeddedImage;
       
     } catch (error) {
@@ -560,6 +602,7 @@ class PDFServiceDynamic {
       
       console.log(`✅ PDF saved: ${filePath}`);
       
+      // Compartir automáticamente después de un pequeño delay
       setTimeout(async () => {
         try {
           if (await Sharing.isAvailableAsync()) {
@@ -589,12 +632,17 @@ class PDFServiceDynamic {
    * UTILIDADES
    */
   private base64ToUint8Array(base64: string): Uint8Array {
-    const binaryString = atob(base64);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
+    try {
+      const binaryString = atob(base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return bytes;
+    } catch (error) {
+      console.error('Error converting base64 to Uint8Array:', error);
+      return new Uint8Array(0);
     }
-    return bytes;
   }
 
   private async uint8ArrayToBase64(uint8Array: Uint8Array): Promise<string> {
@@ -625,12 +673,12 @@ class PDFServiceDynamic {
   }
 
   /**
-   * Limpiar cachés
+   * Limpiar cachés - MEJORADO: ahora limpia solo el caché de plantillas
    */
   clearCaches(): void {
-    this.imageCache.clear();
+    // Solo limpiar caché de plantillas, NO el de imágenes durante la generación
     this.templateCache.clear();
-    console.log('🧹 Caches cleared');
+    console.log('🧹 Template cache cleared');
   }
 
   /**

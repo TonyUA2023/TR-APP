@@ -56,16 +56,6 @@ export const underpinningInspectionByPagesForm: InspectionForm = {
       required: false
     },
     {
-      id: 'project_address',
-      type: 'textarea',
-      label: 'Project Address',
-      section: 'Page 1: General Information',
-      placeholder: 'Enter complete project address',
-      description: undefined,
-      maxImages: false,
-      required: false
-    },
-    {
       id: 'contractor_name',
       type: 'text',
       label: 'Contractor',

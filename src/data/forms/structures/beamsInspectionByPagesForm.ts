@@ -53,14 +53,6 @@ export const beamsInspectionByPagesForm: InspectionForm = {
       placeholder: 'Enter report number',
     },
     {
-      id: 'project_address',
-      type: 'textarea',
-      label: 'Project Address',
-      section: 'Page 1: General Information',
-      required: true,
-      placeholder: 'Enter complete project address',
-    },
-    {
       id: 'contractor_name',
       type: 'text',
       label: 'Contractor Name',

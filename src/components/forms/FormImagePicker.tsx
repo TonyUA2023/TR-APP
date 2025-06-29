@@ -1,4 +1,4 @@
-// src/components/forms/FormImagePicker.tsx - VERSIÓN MEJORADA CON ADAPTACIÓN PARA DIMENSIONES FORZADAS
+// src/components/forms/FormImagePicker.tsx - VERSIÓN MEJORADA
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -26,7 +26,6 @@ interface FormImagePickerProps {
   onChange: (value: string | string[]) => void;
   error?: string;
   multiple?: boolean;
-  // NUEVO: Configuración específica para el tipo de formulario
   formType?: string;
   fieldCategory?: 'main' | 'detail' | 'process' | 'compact';
 }
@@ -38,7 +37,7 @@ interface ProcessedImage {
   size: number;
   isValid: boolean;
   error?: string;
-  processedForPDF: boolean; // NUEVO: Indica si está optimizado para PDF
+  processedForPDF: boolean;
 }
 
 interface ImageProcessingConfig {
@@ -70,31 +69,30 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
   }, []);
 
   /**
-   * NUEVO: Obtener configuración de procesamiento según el tipo de campo
+   * Obtener configuración de procesamiento según el tipo de campo
    */
   const getProcessingConfig = (): ImageProcessingConfig => {
-    // Configuraciones basadas en los constraints de templateMappings
     const configs: Record<string, ImageProcessingConfig> = {
       main: {
-        maxWidth: 1200,  // Resolución alta para fotos principales
+        maxWidth: 1200,
         maxHeight: 900,
         quality: 0.9,
         category: 'Main Photo (High Quality)'
       },
       detail: {
-        maxWidth: 1000,  // Resolución estándar para detalles
+        maxWidth: 1000,
         maxHeight: 750,
         quality: 0.8,
         category: 'Detail Photo (Standard Quality)'
       },
       process: {
-        maxWidth: 800,   // Resolución media para procesos
+        maxWidth: 800,
         maxHeight: 600,
         quality: 0.7,
         category: 'Process Photo (Medium Quality)'
       },
       compact: {
-        maxWidth: 600,   // Resolución compacta para espacios pequeños
+        maxWidth: 600,
         maxHeight: 450,
         quality: 0.6,
         category: 'Compact Photo (Optimized Size)'
@@ -126,51 +124,58 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
   const createAppImageDirectory = async (): Promise<string> => {
     const appImageDir = `${FileSystem.documentDirectory}inspection_images/`;
     
-    const dirInfo = await FileSystem.getInfoAsync(appImageDir);
-    if (!dirInfo.exists) {
-      await FileSystem.makeDirectoryAsync(appImageDir, { intermediates: true });
-      console.log('📁 Created app image directory:', appImageDir);
+    try {
+      const dirInfo = await FileSystem.getInfoAsync(appImageDir);
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(appImageDir, { intermediates: true });
+        console.log('📁 Created app image directory:', appImageDir);
+      }
+    } catch (error) {
+      console.error('Error creating directory:', error);
     }
     
     return appImageDir;
   };
 
   /**
-   * MEJORADO: Procesar y optimizar imagen con configuración específica
+   * MEJORADO: Procesar y optimizar imagen con mejor compatibilidad
    */
   const processImage = async (uri: string, fieldId: string): Promise<ProcessedImage> => {
     try {
       const config = getProcessingConfig();
       console.log('🖼️ Processing image for field:', fieldId);
       console.log('⚙️ Using config:', config);
-      console.log('📎 Original URI:', uri.substring(0, 100) + '...');
       
       setProcessingStatus(`Optimizing ${config.category.toLowerCase()}...`);
       
-      // 1. Obtener información de la imagen original
+      // 1. Verificar imagen original
       const originalInfo = await FileSystem.getInfoAsync(uri);
-      console.log('📊 Original file info:', {
-        exists: originalInfo.exists,
-        size: (originalInfo && 'size' in originalInfo && typeof originalInfo.size === 'number') ? originalInfo.size : 0,
-        uri: uri.substring(0, 50) + '...'
-      });
-      
       if (!originalInfo.exists || !originalInfo.size || originalInfo.size === 0) {
         throw new Error('Original image file is invalid or empty');
       }
       
-      // 2. NUEVO: Calcular dimensiones de redimensionado inteligente
+      console.log('📊 Original file size:', originalInfo.size);
+      
+      // 2. Calcular dimensiones de redimensionado
       setProcessingStatus('Calculating optimal dimensions...');
       
-      // Obtener dimensiones originales
-      const imageInfo = await ImageManipulator.manipulateAsync(uri, [], { format: ImageManipulator.SaveFormat.JPEG });
-      const originalWidth = imageInfo.width;
-      const originalHeight = imageInfo.height;
+      // IMPORTANTE: Usar manipulación sin base64 para mejor compatibilidad
+      const manipResult = await ImageManipulator.manipulateAsync(
+        uri,
+        [], // Sin manipulaciones para obtener info
+        { 
+          compress: 1.0,
+          format: ImageManipulator.SaveFormat.JPEG 
+        }
+      );
+      
+      const originalWidth = manipResult.width;
+      const originalHeight = manipResult.height;
       const aspectRatio = originalWidth / originalHeight;
       
-      console.log('📐 Original dimensions:', `${originalWidth}x${originalHeight}, ratio: ${aspectRatio.toFixed(2)}`);
+      console.log('📐 Original dimensions:', `${originalWidth}x${originalHeight}`);
       
-      // Calcular nuevas dimensiones respetando aspect ratio pero dentro de los límites
+      // Calcular nuevas dimensiones
       let newWidth = originalWidth;
       let newHeight = originalHeight;
       
@@ -184,7 +189,6 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
         newWidth = newHeight * aspectRatio;
       }
       
-      // Asegurar que las dimensiones sean números enteros
       newWidth = Math.round(newWidth);
       newHeight = Math.round(newHeight);
       
@@ -195,7 +199,6 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
       
       const manipulationActions = [];
       
-      // Solo redimensionar si es necesario
       if (newWidth !== originalWidth || newHeight !== originalHeight) {
         manipulationActions.push({ resize: { width: newWidth, height: newHeight } });
       }
@@ -205,62 +208,64 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
         manipulationActions,
         {
           compress: config.quality,
-          format: ImageManipulator.SaveFormat.JPEG, // Siempre JPEG para compatibilidad PDF
+          format: ImageManipulator.SaveFormat.JPEG,
+          base64: false, // IMPORTANTE: No usar base64 aquí
         }
       );
       
-      console.log('✨ Image processed:', {
-        originalSize: originalInfo.size,
-        originalDimensions: `${originalWidth}x${originalHeight}`,
-        newDimensions: `${processedImage.width}x${processedImage.height}`,
-        quality: config.quality,
-        category: config.category
-      });
-      
-      // 4. Crear nombre único y copiar a directorio de la app
+      // 4. Guardar imagen procesada en directorio persistente
       setProcessingStatus('Saving optimized image...');
       const appImageDir = await createAppImageDirectory();
-      const fileName = `${fieldId}_${formType}_${fieldCategory}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substr(2, 9);
+      const fileName = `${fieldId}_${formType}_${timestamp}_${randomId}.jpg`;
       const finalUri = `${appImageDir}${fileName}`;
       
-      await FileSystem.copyAsync({
-        from: processedImage.uri,
-        to: finalUri,
-      });
+      // IMPORTANTE: Usar moveAsync en lugar de copyAsync para mejor compatibilidad
+      try {
+        await FileSystem.moveAsync({
+          from: processedImage.uri,
+          to: finalUri,
+        });
+      } catch (moveError) {
+        // Si moveAsync falla, intentar con copyAsync
+        console.log('Move failed, trying copy...', moveError);
+        await FileSystem.copyAsync({
+          from: processedImage.uri,
+          to: finalUri,
+        });
+        
+        // Limpiar archivo temporal
+        try {
+          await FileSystem.deleteAsync(processedImage.uri, { idempotent: true });
+        } catch (deleteError) {
+          console.log('Could not delete temp file:', deleteError);
+        }
+      }
       
-      // 5. Verificar que el archivo se guardó correctamente
+      // 5. Verificar archivo guardado
       const finalInfo = await FileSystem.getInfoAsync(finalUri);
-      console.log('✅ Final file info:', {
-        exists: finalInfo.exists,
-        size: (finalInfo && 'size' in finalInfo && typeof finalInfo.size === 'number') ? finalInfo.size : 0,
-        uri: finalUri.substring(0, 50) + '...',
-        category: config.category
-      });
-      
       if (!finalInfo.exists || !finalInfo.size || finalInfo.size < 1000) {
         throw new Error('Failed to save processed image properly');
       }
       
-      // 6. Limpiar imagen temporal procesada
-      try {
-        await FileSystem.deleteAsync(processedImage.uri, { idempotent: true });
-      } catch (deleteError) {
-        console.log('⚠️ Could not delete temp processed image:', deleteError);
-      }
+      console.log('✅ Image saved successfully:', {
+        uri: finalUri,
+        size: finalInfo.size,
+        dimensions: `${newWidth}x${newHeight}`
+      });
       
       return {
         uri: finalUri,
-        width: processedImage.width,
-        height: processedImage.height,
-        size: (finalInfo && 'size' in finalInfo && typeof finalInfo.size === 'number') ? finalInfo.size : 0,
+        width: newWidth,
+        height: newHeight,
+        size: finalInfo.size || 0,
         isValid: true,
-        processedForPDF: true, // NUEVO: Marca que está optimizado para PDF
+        processedForPDF: true,
       };
       
     } catch (error) {
       console.error('❌ Error processing image:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      
       return {
         uri: '',
         width: 0,
@@ -268,7 +273,7 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
         size: 0,
         isValid: false,
         processedForPDF: false,
-        error: errorMessage,
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   };
@@ -282,7 +287,6 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
         return { isValid: false, error: 'Empty URI' };
       }
       
-      // Verificar que el archivo existe
       const fileInfo = await FileSystem.getInfoAsync(uri);
       if (!fileInfo.exists) {
         return { isValid: false, error: 'File does not exist' };
@@ -296,7 +300,6 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
         return { isValid: false, error: 'File too small (likely corrupted)' };
       }
       
-      // NUEVO: Verificar tamaño máximo (50MB)
       if (fileInfo.size > 50 * 1024 * 1024) {
         return { isValid: false, error: 'File too large (max 50MB)' };
       }
@@ -312,7 +315,7 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
   };
 
   /**
-   * Mostrar opciones de imagen con información de categoría
+   * Mostrar opciones de imagen
    */
   const showImageOptions = () => {
     const config = getProcessingConfig();
@@ -330,7 +333,7 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
   };
 
   /**
-   * Tomar foto con la cámara - MEJORADO con configuración específica
+   * Tomar foto con la cámara
    */
   const takePhoto = async () => {
     try {
@@ -350,13 +353,10 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
         }
       }
 
-      const config = getProcessingConfig();
-      
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3], // Aspecto estándar que funciona bien para inspecciones
-        quality: 1.0, // Alta calidad inicial, la procesamos después según la categoría
+        allowsEditing: false, // IMPORTANTE: Desactivar edición para evitar problemas
+        quality: 1.0,
         base64: false,
         exif: false,
       });
@@ -375,7 +375,7 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
   };
 
   /**
-   * Seleccionar imagen de la galería - MEJORADO
+   * Seleccionar imagen de la galería
    */
   const pickFromGallery = async () => {
     try {
@@ -397,9 +397,8 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1.0, // Alta calidad inicial
+        allowsEditing: false, // IMPORTANTE: Desactivar edición
+        quality: 1.0,
         base64: false,
         exif: false,
         allowsMultipleSelection: multiple && images.length === 0,
@@ -407,7 +406,6 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         if (multiple && result.assets.length > 1) {
-          // Procesar múltiples imágenes
           for (const asset of result.assets) {
             await handleImageSelected(asset.uri);
           }
@@ -425,37 +423,27 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
   };
 
   /**
-   * MEJORADO: Manejar imagen seleccionada con procesamiento específico por categoría
+   * Manejar imagen seleccionada
    */
   const handleImageSelected = async (rawImageUri: string) => {
     try {
       const config = getProcessingConfig();
-      console.log('📸 === PROCESSING NEW IMAGE ===');
-      console.log('📷 Field:', field.id);
-      console.log('🏷️ Category:', fieldCategory);
-      console.log('⚙️ Config:', config);
-      console.log('📎 Raw URI:', rawImageUri.substring(0, 100) + '...');
+      console.log('📸 Processing new image for field:', field.id);
       
-      // 1. Validar imagen original
+      // 1. Validar imagen
       setProcessingStatus('Validating image...');
       const validation = await validateImageUri(rawImageUri);
       if (!validation.isValid) {
         throw new Error(`Image validation failed: ${validation.error}`);
       }
       
-      // 2. Procesar y optimizar imagen con configuración específica
+      // 2. Procesar imagen
       const processed = await processImage(rawImageUri, field.id);
       if (!processed.isValid) {
         throw new Error(`Image processing failed: ${processed.error}`);
       }
       
-      console.log('✅ Image successfully processed:', {
-        finalUri: processed.uri.substring(0, 50) + '...',
-        size: processed.size,
-        dimensions: `${processed.width}x${processed.height}`,
-        category: config.category,
-        processedForPDF: processed.processedForPDF
-      });
+      console.log('✅ Image processed successfully:', processed.uri);
       
       // 3. Actualizar estado
       if (multiple) {
@@ -465,29 +453,26 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
         onChange(processed.uri);
       }
       
-      // 4. MEJORADO: Mostrar confirmación con detalles específicos
-      const compressionRatio = processed.size > 0 ? 
-        Math.round(((processed.size) / 1024)) : 0;
-      
+      // 4. Mostrar confirmación
+      const sizeKB = Math.round((processed.size) / 1024);
       Alert.alert(
         'Photo Added Successfully',
-        `📷 ${config.category}\n🗂️ Size: ${compressionRatio}KB\n📐 Dimensions: ${processed.width}×${processed.height}\n✅ Optimized for PDF export`,
+        `📷 ${config.category}\n🗂️ Size: ${sizeKB}KB\n📐 Dimensions: ${processed.width}×${processed.height}`,
         [{ text: 'OK' }]
       );
       
     } catch (error) {
       console.error('❌ Error handling selected image:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
       Alert.alert(
         'Image Processing Error',
-        `Failed to process image: ${errorMessage}\n\nPlease try taking the photo again or select a different image.`,
+        `Failed to process image: ${error instanceof Error ? error.message : 'Unknown error'}\n\nPlease try again.`,
         [{ text: 'OK' }]
       );
     }
   };
 
   /**
-   * Eliminar imagen con limpieza de archivos
+   * Eliminar imagen
    */
   const removeImage = (index: number) => {
     Alert.alert(
@@ -502,7 +487,7 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
             try {
               const imageToRemove = images[index];
               
-              // Eliminar archivo si está en nuestro directorio
+              // Intentar eliminar archivo
               if (imageToRemove && imageToRemove.includes('inspection_images/')) {
                 try {
                   await FileSystem.deleteAsync(imageToRemove, { idempotent: true });
@@ -537,7 +522,7 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
   };
 
   /**
-   * MEJORADO: Renderizar miniatura con información de categoría
+   * Renderizar miniatura
    */
   const renderImageThumbnail = (imageUri: string, index: number) => {
     const config = getProcessingConfig();
@@ -546,16 +531,20 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
     return (
       <View key={`${imageUri}-${index}`} style={styles.imageContainer}>
         <TouchableOpacity onPress={() => viewImage(index)} activeOpacity={0.8}>
-          <Image source={{ uri: imageUri }} style={styles.thumbnail} />
+          <Image 
+            source={{ uri: imageUri }} 
+            style={styles.thumbnail}
+            resizeMode="cover"
+          />
           
-          {/* MEJORADO: Indicador de categoría y procesamiento */}
+          {/* Indicador de categoría */}
           <View style={[styles.categoryIndicator, getCategoryStyle(fieldCategory)]}>
             <Text style={styles.categoryText}>
               {fieldCategory.charAt(0).toUpperCase()}
             </Text>
           </View>
           
-          {/* Indicador de imagen procesada */}
+          {/* Indicador de procesado */}
           {isProcessed && (
             <View style={styles.processedIndicator}>
               <Ionicons name="checkmark-circle" size={16} color={COLORS.success} />
@@ -575,7 +564,7 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
   };
 
   /**
-   * NUEVO: Obtener estilo según la categoría
+   * Obtener estilo según la categoría
    */
   const getCategoryStyle = (category: string) => {
     const styles = {
@@ -597,7 +586,7 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
         {field.required && <Text style={styles.required}> *</Text>}
       </Text>
 
-      {/* NUEVO: Indicador de categoría */}
+      {/* Indicador de categoría */}
       <View style={styles.categoryHeader}>
         <View style={[styles.categoryBadge, getCategoryStyle(fieldCategory)]}>
           <Text style={styles.categoryBadgeText}>{config.category}</Text>
@@ -615,7 +604,7 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
         {images.map((imageUri, index) => renderImageThumbnail(imageUri, index))}
 
         {/* Botón para agregar imagen */}
-        {(!images.length || (multiple && images.length < (field.maxImages || 10))) && (
+        {(!images.length || (multiple && images.length < (typeof field.maxImages === 'number' ? field.maxImages : 10))) && (
           <TouchableOpacity
             style={[styles.addButton, isLoading && styles.addButtonDisabled]}
             onPress={showImageOptions}
@@ -643,14 +632,14 @@ const FormImagePicker: React.FC<FormImagePickerProps> = ({
         )}
       </View>
 
-      {/* Contador de imágenes para múltiples */}
+      {/* Contador de imágenes */}
       {multiple && field.maxImages && images.length > 0 && (
         <Text style={styles.imageCount}>
           {images.length} / {field.maxImages} images
         </Text>
       )}
 
-      {/* MEJORADO: Información de procesamiento con detalles */}
+      {/* Información de procesamiento */}
       {images.length > 0 && (
         <View style={styles.infoContainer}>
           <Ionicons name="information-circle" size={14} color={COLORS.info} />
@@ -712,7 +701,6 @@ const styles = StyleSheet.create({
   required: {
     color: COLORS.error,
   },
-  // NUEVO: Estilos para categoría
   categoryHeader: {
     marginBottom: 8,
   },
@@ -748,7 +736,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: COLORS.gray100,
   },
-  // NUEVO: Indicador de categoría en miniatura
   categoryIndicator: {
     position: 'absolute',
     top: 4,
@@ -814,7 +801,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '600',
   },
-  // NUEVO: Subtexto para categoría en botón
   addButtonSubtext: {
     fontSize: 9,
     color: COLORS.primary,

@@ -50,13 +50,6 @@ export const wallStripInspectionForm: InspectionForm = {
       placeholder: 'Enter report number',
     },
     {
-      id: 'project_address',
-      type: 'textarea',
-      label: 'Project Address',
-      section: 'Page 1: General Information',
-      placeholder: 'Enter project address',
-    },
-    {
       id: 'contractor_name',
       type: 'text',
       label: 'Contractor',

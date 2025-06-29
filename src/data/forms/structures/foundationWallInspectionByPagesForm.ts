@@ -56,16 +56,6 @@ export const foundationWallInspectionByPagesForm: InspectionForm = {
       maxImages: false
     },
     {
-      id: 'project_address',
-      type: 'textarea',
-      label: 'Project Address',
-      section: 'Page 1: General Information',
-      required: false,
-      placeholder: 'Enter complete project address',
-      description: undefined,
-      maxImages: false
-    },
-    {
       id: 'contractor_name',
       type: 'text',
       label: 'Contractor Name',
