@@ -49,7 +49,7 @@ export const sprinklerInspectionForm: InspectionForm = {
       type: 'text',
       label: 'Inspection Report #',
       section: 'Page 1: General Information',
-      required: true,
+      required: false,
       placeholder: 'Enter report number',
     },
     {
@@ -78,7 +78,7 @@ export const sprinklerInspectionForm: InspectionForm = {
       type: 'text',
       label: 'Contractor Name',
       section: 'Page 1: General Information',
-      required: true,
+      required: false,
       placeholder: 'Enter contractor company name',
       description: undefined,
       maxImages: false
@@ -88,7 +88,7 @@ export const sprinklerInspectionForm: InspectionForm = {
       type: 'date',
       label: 'Date of Inspection',
       section: 'Page 1: General Information',
-      required: true,
+      required: false,
     },
     {
       id: 'arrival_time',
@@ -107,7 +107,7 @@ export const sprinklerInspectionForm: InspectionForm = {
         '4:00 pm'
       ],
       placeholder: 'Select arrival time',
-      required: true,
+      required: false,
     },
     {
       id: 'departure_time',
@@ -127,7 +127,7 @@ export const sprinklerInspectionForm: InspectionForm = {
         '6:00 pm'
       ],
       placeholder: 'Select departure time',
-      required: true,
+      required: false,
     },
     {
       id: 'weather_conditions',
@@ -136,7 +136,7 @@ export const sprinklerInspectionForm: InspectionForm = {
       section: 'Page 1: General Information',
       options: ['Sunny', 'Cloudy', 'Fair', 'Rainy'],
       placeholder: 'Select weather',
-      required: true,
+      required: false,
     },
     {
       id: 'temperature',
@@ -151,7 +151,7 @@ export const sprinklerInspectionForm: InspectionForm = {
       type: 'text',
       label: 'Inspector Name',
       section: 'Page 1: General Information',
-      required: true,
+      required: false,
       placeholder: 'Enter inspector full name',
     },
     {
@@ -159,7 +159,7 @@ export const sprinklerInspectionForm: InspectionForm = {
       type: 'textarea',
       label: 'Structural Element/Item Inspected & Work Location',
       section: 'Page 1: General Information',
-      required: true,
+      required: false,
       placeholder: 'Describe structural elements and work location',
     },
     {
@@ -168,7 +168,7 @@ export const sprinklerInspectionForm: InspectionForm = {
       label: 'Description of Inspection',
       section: 'Page 1: General Information',
       placeholder: 'Detailed description of the inspection performed',
-      required: true,
+      required: false,
     },
     {
       id: 'deviation_design_documents',
@@ -218,7 +218,7 @@ export const sprinklerInspectionForm: InspectionForm = {
       type: 'signature',
       label: 'Inspector Signature',
       section: 'Page 1: General Information',
-      required: true,
+      required: false,
     },
 
     // ========== PÁGINA 2: FRONT VIEW AND SPRINKLERS ==========

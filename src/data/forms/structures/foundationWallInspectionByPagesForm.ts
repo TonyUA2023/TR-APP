@@ -81,7 +81,7 @@ export const foundationWallInspectionByPagesForm: InspectionForm = {
       type: 'text',
       label: 'Contractor Name',
       section: 'Page 1: General Information',
-      required: true,
+      required: false,
       placeholder: 'Enter contractor company name',
       description: undefined,
       maxImages: false
