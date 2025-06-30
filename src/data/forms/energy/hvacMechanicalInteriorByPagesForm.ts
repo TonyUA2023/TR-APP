@@ -66,16 +66,7 @@ export const hvacMechanicalInteriorByPagesForm: InspectionForm = {
       description: undefined,
       maxImages: false
     },
-    {
-      id: 'contractor_name',
-      type: 'text',
-      label: 'Contractor Name',
-      section: 'Page 1: General Information',
-      required: false,
-      placeholder: 'Enter contractor company name',
-      description: undefined,
-      maxImages: false
-    },
+
     {
       id: 'site_information',
       type: 'textarea',
@@ -83,6 +74,16 @@ export const hvacMechanicalInteriorByPagesForm: InspectionForm = {
       section: 'Page 1: General Information',
       required: false,
       placeholder: 'Enter site/building information',
+      description: undefined,
+      maxImages: false
+    },
+        {
+      id: 'contractor_name',
+      type: 'text',
+      label: 'Contractor Name',
+      section: 'Page 1: General Information',
+      required: false,
+      placeholder: 'Enter contractor company name',
       description: undefined,
       maxImages: false
     },

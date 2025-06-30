@@ -66,17 +66,7 @@ export const hvacDuctsByPagesForm: InspectionForm = {
       description: undefined,
       maxImages: false
     },
-    {
-      id: 'contractor_name',
-      type: 'text',
-      label: 'Contractor Name',
-      section: 'Page 1: General Information',
-      required: false,
-      placeholder: 'Enter contractor company name',
-      description: undefined,
-      maxImages: false
-    },
-    {
+        {
       id: 'site_information',
       type: 'textarea',
       label: 'Site Information',
@@ -86,6 +76,17 @@ export const hvacDuctsByPagesForm: InspectionForm = {
       description: undefined,
       maxImages: false
     },
+    {
+      id: 'contractor_name',
+      type: 'textarea',
+      label: 'Contractor Name',
+      section: 'Page 1: General Information',
+      required: false,
+      placeholder: 'Enter contractor company name',
+      description: undefined,
+      maxImages: false
+    },
+
     {
       id: 'inspection_date',
       type: 'date',

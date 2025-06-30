@@ -57,8 +57,18 @@ export const pileInspectionByPagesForm: InspectionForm = {
       maxImages: false
     },
     {
+      id: 'project_address',
+      type: 'textarea',
+      label: 'Project Data',
+      section: 'Page 1: General Information',
+      required: false,
+      placeholder: 'Enter contractor company name',
+      description: undefined,
+      maxImages: false
+    },
+    {
       id: 'contractor_name',
-      type: 'text',
+      type: 'textarea',
       label: 'Contractor Name',
       section: 'Page 1: General Information',
       required: false,

@@ -55,10 +55,23 @@ export const sprinklerInspectionForm: InspectionForm = {
     {
       id: 'project_address',
       type: 'textarea',
-      label: 'Project Address',
+      label: 'Project Data',
       section: 'Page 1: General Information',
-      required: true,
-      placeholder: 'Enter complete project address',
+      required: false,
+      placeholder: 'Enter contractor company name',
+      description: undefined,
+      maxImages: false
+    },
+
+    {
+      id: 'site_information',
+      type: 'textarea',
+      label: 'Site Information',
+      section: 'Page 1: General Information',
+      required: false,
+      placeholder: 'Enter site/building information',
+      description: undefined,
+      maxImages: false
     },
     {
       id: 'contractor_name',
@@ -67,14 +80,8 @@ export const sprinklerInspectionForm: InspectionForm = {
       section: 'Page 1: General Information',
       required: true,
       placeholder: 'Enter contractor company name',
-    },
-    {
-      id: 'site_information',
-      type: 'textarea',
-      label: 'Site Information',
-      section: 'Page 1: General Information',
-      required: false,
-      placeholder: 'Enter site/building information',
+      description: undefined,
+      maxImages: false
     },
     {
       id: 'inspection_date',

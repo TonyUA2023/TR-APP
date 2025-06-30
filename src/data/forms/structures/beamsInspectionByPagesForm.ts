@@ -43,6 +43,8 @@ export const beamsInspectionByPagesForm: InspectionForm = {
         '934 46th st'
       ],
       placeholder: 'Select project location',
+      description: undefined,
+      maxImages: false
     },
     {
       id: 'inspection_report_number',
@@ -51,6 +53,29 @@ export const beamsInspectionByPagesForm: InspectionForm = {
       section: 'Page 1: General Information',
       required: true,
       placeholder: 'Enter report number',
+      description: undefined,
+      maxImages: false
+    },
+    {
+      id: 'project_address',
+      type: 'textarea',
+      label: 'Project Data',
+      section: 'Page 1: General Information',
+      required: false,
+      placeholder: 'Enter contractor company name',
+      description: undefined,
+      maxImages: false
+    },
+
+    {
+      id: 'site_information',
+      type: 'textarea',
+      label: 'Site Information',
+      section: 'Page 1: General Information',
+      required: false,
+      placeholder: 'Enter site/building information',
+      description: undefined,
+      maxImages: false
     },
     {
       id: 'contractor_name',
@@ -59,21 +84,18 @@ export const beamsInspectionByPagesForm: InspectionForm = {
       section: 'Page 1: General Information',
       required: true,
       placeholder: 'Enter contractor company name',
+      description: undefined,
+      maxImages: false
     },
-    {
-      id: 'site_information',
-      type: 'textarea',
-      label: 'Site Information',
-      section: 'Page 1: General Information',
-      required: false,
-      placeholder: 'Enter site/building information',
-    },
+
     {
       id: 'inspection_date',
       type: 'date',
       label: 'Date of Inspection',
       section: 'Page 1: General Information',
       required: true,
+      description: undefined,
+      maxImages: false
     },
     {
       id: 'arrival_time',
@@ -93,6 +115,8 @@ export const beamsInspectionByPagesForm: InspectionForm = {
       ],
       placeholder: 'Select arrival time',
       required: true,
+      description: undefined,
+      maxImages: false
     },
     {
       id: 'departure_time',

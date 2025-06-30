@@ -56,14 +56,14 @@ export const underpinningInspectionByPagesForm: InspectionForm = {
       required: false
     },
     {
-      id: 'contractor_name',
-      type: 'text',
-      label: 'Contractor',
+      id: 'project_address',
+      type: 'textarea',
+      label: 'Project Data',
       section: 'Page 1: General Information',
-      placeholder: 'Enter contractor name',
+      required: false,
+      placeholder: 'Enter contractor company name',
       description: undefined,
-      maxImages: false,
-      required: false
+      maxImages: false
     },
     {
       id: 'site_information',
@@ -75,6 +75,17 @@ export const underpinningInspectionByPagesForm: InspectionForm = {
       maxImages: false,
       required: false
     },
+    {
+      id: 'contractor_name',
+      type: 'textarea',
+      label: 'Contractor',
+      section: 'Page 1: General Information',
+      placeholder: 'Enter contractor name',
+      description: undefined,
+      maxImages: false,
+      required: false
+    },
+
     {
       id: 'date_of_issuance',
       type: 'date',

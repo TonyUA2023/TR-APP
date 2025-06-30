@@ -53,13 +53,16 @@ export const steelInspectionByPagesForm: InspectionForm = {
       placeholder: 'Enter report number',
     },
     {
-      id: 'contractor_name',
-      type: 'text',
-      label: 'Contractor Name',
+      id: 'project_address',
+      type: 'textarea',
+      label: 'Project Data',
       section: 'Page 1: General Information',
       required: false,
       placeholder: 'Enter contractor company name',
+      description: undefined,
+      maxImages: false
     },
+
     {
       id: 'site_information',
       type: 'textarea',
@@ -67,6 +70,18 @@ export const steelInspectionByPagesForm: InspectionForm = {
       section: 'Page 1: General Information',
       required: false,
       placeholder: 'Enter site/building information',
+      description: undefined,
+      maxImages: false
+    },
+    {
+      id: 'contractor_name',
+      type: 'text',
+      label: 'Contractor Name',
+      section: 'Page 1: General Information',
+      required: true,
+      placeholder: 'Enter contractor company name',
+      description: undefined,
+      maxImages: false
     },
     {
       id: 'inspection_date',
